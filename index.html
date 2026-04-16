@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BadgeBox Watch — ARST</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: #0f1419;
+    color: #e6e6e6;
+    padding: 20px;
+}
+header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+}
+h1 { font-size: 22px; font-weight: 600; }
+.controls { display: flex; gap: 12px; align-items: center; }
+select, button {
+    background: #1a2332; color: #e6e6e6; border: 1px solid #2a3a52;
+    padding: 8px 12px; border-radius: 6px; font-size: 14px; cursor: pointer;
+}
+.summary {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px; margin-bottom: 24px;
+}
+.card {
+    background: #1a2332; border-radius: 8px; padding: 16px;
+    border: 1px solid #2a3a52;
+}
+.card .num { font-size: 28px; font-weight: 700; }
+.card .lbl { font-size: 12px; color: #8a9aae; text-transform: uppercase; margin-top: 4px; }
+.ok    { color: #4ade80; }
+.late  { color: #facc15; }
+.down  { color: #f87171; }
+.bgoff { color: #fb923c; }
+.never { color: #9ca3af; }
+
+table {
+    width: 100%; border-collapse: collapse; background: #1a2332;
+    border-radius: 8px; overflow: hidden;
+}
+th, td {
+    padding: 10px 14px; text-align: left; font-size: 14px;
+    border-bottom: 1px solid #2a3a52;
+}
+th { background: #0f1923; color: #8a9aae; font-weight: 500; font-size: 12px;
+     text-transform: uppercase; letter-spacing: 0.05em; }
+tr:last-child td { border-bottom: 0; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+       margin-right: 8px; vertical-align: middle; }
+.dot.ok    { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+.dot.late  { background: #facc15; box-shadow: 0 0 8px #facc15; }
+.dot.down  { background: #f87171; box-shadow: 0 0 8px #f87171; }
+.dot.bgoff { background: #fb923c; box-shadow: 0 0 8px #fb923c; }
+.dot.never { background: #9ca3af; }
+
+.section-title {
+    font-size: 14px; text-transform: uppercase; color: #8a9aae;
+    letter-spacing: 0.05em; margin: 32px 0 12px; font-weight: 500;
+}
+.alert-row { display: flex; gap: 12px; padding: 10px 14px;
+             border-bottom: 1px solid #2a3a52; font-size: 13px; align-items: baseline; }
+.alert-row:last-child { border-bottom: 0; }
+.alert-time { color: #8a9aae; min-width: 130px; font-variant-numeric: tabular-nums; }
+.alert-kind { min-width: 90px; font-weight: 600; font-size: 11px;
+              text-transform: uppercase; letter-spacing: 0.04em; }
+.battery { font-variant-numeric: tabular-nums; }
+.battery.low { color: #f87171; }
+.muted { color: #6b7a8c; font-size: 12px; }
+.refresh-info { font-size: 12px; color: #8a9aae; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>📡 BadgeBox Watch — ARST</h1>
+    <div class="controls">
+        <select id="filterSede"><option value="">Tutte le sedi</option></select>
+        <button id="refresh">↻ Aggiorna</button>
+        <span class="refresh-info" id="refreshInfo">—</span>
+    </div>
+</header>
+
+<div class="summary" id="summary"></div>
+
+<div class="section-title">Dispositivi</div>
+<table id="devicesTable">
+    <thead>
+        <tr>
+            <th>Stato</th>
+            <th>Sede</th>
+            <th>Descrizione</th>
+            <th>Ultima vista</th>
+            <th>BadgeBox</th>
+            <th>Batteria</th>
+            <th>Rete</th>
+            <th>Modello</th>
+        </tr>
+    </thead>
+    <tbody id="devicesBody"></tbody>
+</table>
+
+<div class="section-title">Alert ultimi 7 giorni</div>
+<div id="alertsContainer" style="background: #1a2332; border-radius: 8px; overflow: hidden; border: 1px solid #2a3a52;"></div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL  = "https://gfqufujsprfgtcqafkux.supabase.co";
+const SUPABASE_KEY  = "sb_publishable_IUKjmO4xMxuj0cuHn7HWIA_Rfz4vcM7";
+
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const STATUS_LABELS = {
+    ok: "OK", late: "In ritardo", down: "DOWN",
+    badgebox_off: "BadgeBox off", never: "Mai visto",
+};
+
+function fmtAgo(seconds) {
+    if (seconds == null) return "—";
+    if (seconds < 60) return `${seconds}s fa`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} min fa`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m fa`;
+    return `${Math.floor(seconds / 86400)}g fa`;
+}
+
+function fmtDate(iso) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "medium" });
+}
+
+async function loadDevices(filterSede) {
+    let q = sb.from("devices_status").select("*").order("sede").order("descrizione");
+    if (filterSede) q = q.eq("sede", filterSede);
+    const { data, error } = await q;
+    if (error) { console.error(error); return []; }
+    return data ?? [];
+}
+
+async function loadAlerts() {
+    const since = new Date(Date.now() - 7 * 86400 * 1000).toISOString();
+    const { data, error } = await sb
+        .from("alerts")
+        .select("*, devices(sede, descrizione)")
+        .gte("sent_at", since)
+        .order("sent_at", { ascending: false })
+        .limit(200);
+    if (error) { console.error(error); return []; }
+    return data ?? [];
+}
+
+async function loadSedi() {
+    const { data } = await sb.from("devices").select("sede");
+    const sedi = [...new Set((data ?? []).map(d => d.sede))].sort();
+    const sel = document.getElementById("filterSede");
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Tutte le sedi</option>' +
+        sedi.map(s => `<option ${s === cur ? "selected" : ""}>${s}</option>`).join("");
+}
+
+function renderSummary(devices) {
+    const counts = { ok: 0, late: 0, down: 0, badgebox_off: 0, never: 0 };
+    devices.forEach(d => counts[d.status]++);
+    document.getElementById("summary").innerHTML = `
+        <div class="card"><div class="num">${devices.length}</div><div class="lbl">Totali</div></div>
+        <div class="card"><div class="num ok">${counts.ok}</div><div class="lbl">OK</div></div>
+        <div class="card"><div class="num late">${counts.late}</div><div class="lbl">In ritardo</div></div>
+        <div class="card"><div class="num bgoff">${counts.badgebox_off}</div><div class="lbl">BadgeBox off</div></div>
+        <div class="card"><div class="num down">${counts.down}</div><div class="lbl">Down</div></div>
+        <div class="card"><div class="num never">${counts.never}</div><div class="lbl">Mai visti</div></div>
+    `;
+}
+
+function renderDevices(devices) {
+    const tbody = document.getElementById("devicesBody");
+    if (!devices.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="muted" style="padding:20px;text-align:center">Nessun dispositivo registrato</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = devices.map(d => {
+        const dotClass = d.status === "badgebox_off" ? "bgoff" : d.status;
+        const battClass = d.battery_pct != null && d.battery_pct < 20 ? "low" : "";
+        const battStr = d.battery_pct != null
+            ? `<span class="battery ${battClass}">${d.battery_pct}%${d.battery_charging ? " ⚡" : ""}</span>`
+            : "—";
+        const netStr = d.network_type
+            ? `${d.network_type}${d.network_signal != null ? ` (${d.network_signal})` : ""}`
+            : "—";
+        return `
+            <tr>
+                <td><span class="dot ${dotClass}"></span><span class="${dotClass}">${STATUS_LABELS[d.status]}</span></td>
+                <td>${d.sede}</td>
+                <td>${d.descrizione}</td>
+                <td title="${fmtDate(d.last_seen)}">${fmtAgo(d.seconds_since_last)}</td>
+                <td>${d.badgebox_foreground == null ? "—" : (d.badgebox_foreground ? "✓ foreground" : "✗ background")}</td>
+                <td>${battStr}</td>
+                <td>${netStr}</td>
+                <td class="muted">${d.modello ?? "—"}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function renderAlerts(alerts) {
+    const c = document.getElementById("alertsContainer");
+    if (!alerts.length) {
+        c.innerHTML = `<div class="muted" style="padding:20px;text-align:center">Nessun alert negli ultimi 7 giorni</div>`;
+        return;
+    }
+    const cls = { silence: "down", badgebox_off: "bgoff", recovered: "ok" };
+    c.innerHTML = alerts.map(a => `
+        <div class="alert-row">
+            <span class="alert-time">${fmtDate(a.sent_at)}</span>
+            <span class="alert-kind ${cls[a.kind] ?? "muted"}">${a.kind}</span>
+            <span>${a.devices?.sede ?? "?"} — ${a.devices?.descrizione ?? "?"}</span>
+            ${a.telegram_ok === false ? `<span class="down" title="${a.telegram_error}">⚠ TG fail</span>` : ""}
+        </div>
+    `).join("");
+}
+
+async function refreshAll() {
+    const filterSede = document.getElementById("filterSede").value;
+    const [devices, alerts] = await Promise.all([loadDevices(filterSede), loadAlerts()]);
+    await loadSedi();
+    renderSummary(devices);
+    renderDevices(devices);
+    renderAlerts(alerts);
+    document.getElementById("refreshInfo").textContent =
+        "Aggiornato " + new Date().toLocaleTimeString("it-IT");
+}
+
+document.getElementById("refresh").addEventListener("click", refreshAll);
+document.getElementById("filterSede").addEventListener("change", refreshAll);
+
+refreshAll();
+setInterval(refreshAll, 30_000);  // auto-refresh ogni 30s
+</script>
+</body>
+</html>
