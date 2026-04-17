@@ -8,9 +8,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    background: #0f1419;
-    color: #e6e6e6;
-    padding: 20px;
+    background: #0a0e12; color: #e6e6e6; padding: 20px;
 }
 header {
     display: flex; align-items: center; justify-content: space-between;
@@ -22,6 +20,10 @@ select, button {
     background: #1a2332; color: #e6e6e6; border: 1px solid #2a3a52;
     padding: 8px 12px; border-radius: 6px; font-size: 14px; cursor: pointer;
 }
+button:hover { border-color: #4ade80; }
+.refresh-info { font-size: 12px; color: #8a9aae; }
+
+/* Summary cards */
 .summary {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 12px; margin-bottom: 24px;
@@ -38,73 +40,99 @@ select, button {
 .bgoff { color: #fb923c; }
 .never { color: #9ca3af; }
 
-table {
-    width: 100%; border-collapse: collapse; background: #1a2332;
-    border-radius: 8px; overflow: hidden;
-}
-th, td {
-    padding: 10px 14px; text-align: left; font-size: 14px;
-    border-bottom: 1px solid #2a3a52;
-}
-th { background: #0f1923; color: #8a9aae; font-weight: 500; font-size: 12px;
-     text-transform: uppercase; letter-spacing: 0.05em; }
-tr:last-child td { border-bottom: 0; }
-.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
-       margin-right: 8px; vertical-align: middle; }
-.dot.ok    { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
-.dot.late  { background: #facc15; box-shadow: 0 0 8px #facc15; }
-.dot.down  { background: #f87171; box-shadow: 0 0 8px #f87171; }
-.dot.bgoff { background: #fb923c; box-shadow: 0 0 8px #fb923c; }
-.dot.never { background: #9ca3af; }
-
+/* ECG device cards */
 .section-title {
     font-size: 14px; text-transform: uppercase; color: #8a9aae;
     letter-spacing: 0.05em; margin: 32px 0 12px; font-weight: 500;
 }
+.device-card {
+    background: #0f1419; border: 1px solid #1a2a3a;
+    border-radius: 12px; margin-bottom: 14px; overflow: hidden; position: relative;
+}
+.device-card.status-ok    { border-left: 3px solid #4ade80; }
+.device-card.status-late  { border-left: 3px solid #facc15; }
+.device-card.status-down  { border-left: 3px solid #f87171; }
+.device-card.status-bgoff { border-left: 3px solid #fb923c; }
+.device-card.status-never { border-left: 3px solid #9ca3af; }
+
+.device-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px 6px; flex-wrap: wrap; gap: 8px;
+}
+.device-left { display: flex; align-items: center; gap: 12px; }
+.pulse-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; position: relative;
+}
+.pulse-dot::after {
+    content: ''; position: absolute; inset: -4px; border-radius: 50%;
+    animation: pulse-ring 2s ease-out infinite;
+}
+.pulse-dot.ok    { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+.pulse-dot.ok::after    { border: 2px solid #4ade80; }
+.pulse-dot.late  { background: #facc15; box-shadow: 0 0 8px #facc15; }
+.pulse-dot.late::after  { border: 2px solid #facc15; }
+.pulse-dot.down  { background: #f87171; box-shadow: 0 0 8px #f87171; }
+.pulse-dot.down::after  { border: 2px solid #f87171; animation: none; }
+.pulse-dot.bgoff { background: #fb923c; box-shadow: 0 0 8px #fb923c; }
+.pulse-dot.bgoff::after { border: 2px solid #fb923c; }
+.pulse-dot.never { background: #9ca3af; }
+.pulse-dot.never::after { border: 2px solid #9ca3af; animation: none; }
+
+@keyframes pulse-ring {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(2.2); opacity: 0; }
+}
+
+.device-name { font-size: 15px; font-weight: 600; }
+.device-sub { font-size: 11px; color: #8a9aae; }
+.device-stats { display: flex; gap: 16px; font-size: 12px; color: #8a9aae; }
+.device-stats .val { color: #e6e6e6; font-weight: 600; }
+.device-stats .low { color: #f87171; }
+
+.ecg-container {
+    width: 100%; height: 60px; position: relative;
+    background: linear-gradient(180deg, rgba(10,14,18,0) 0%, rgba(10,14,18,0.8) 100%);
+}
+.ecg-grid {
+    position: absolute; inset: 0;
+    background-image:
+        linear-gradient(rgba(42,58,82,0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(42,58,82,0.12) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+.ecg-canvas { width: 100%; height: 100%; display: block; }
+.bpm-display {
+    position: absolute; top: 6px; right: 14px;
+    font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 16px currentColor;
+}
+.bpm-label { font-size: 9px; color: #8a9aae; font-weight: 400; text-shadow: none; }
+
+/* Alerts */
 .alert-row { display: flex; gap: 12px; padding: 10px 14px;
              border-bottom: 1px solid #2a3a52; font-size: 13px; align-items: baseline; }
 .alert-row:last-child { border-bottom: 0; }
 .alert-time { color: #8a9aae; min-width: 130px; font-variant-numeric: tabular-nums; }
 .alert-kind { min-width: 90px; font-weight: 600; font-size: 11px;
               text-transform: uppercase; letter-spacing: 0.04em; }
-.battery { font-variant-numeric: tabular-nums; }
-.battery.low { color: #f87171; }
 .muted { color: #6b7a8c; font-size: 12px; }
-.refresh-info { font-size: 12px; color: #8a9aae; }
 </style>
 </head>
 <body>
 
 <header>
-    <h1 style="display: flex; align-items: center; gap: 14px;">
-        <img src="dog.png" alt="" style="height: 44px; width: auto;">
-        BadgeBox Watch Dog — ARST
-    </h1>
+    <h1>BadgeBox Watch Dog</h1>
     <div class="controls">
         <select id="filterSede"><option value="">Tutte le sedi</option></select>
-        <button id="refresh">↻ Aggiorna</button>
-        <span class="refresh-info" id="refreshInfo">—</span>
+        <button id="refresh">Aggiorna</button>
+        <span class="refresh-info" id="refreshInfo"></span>
     </div>
 </header>
 
 <div class="summary" id="summary"></div>
 
 <div class="section-title">Dispositivi</div>
-<table id="devicesTable">
-    <thead>
-        <tr>
-            <th>Stato</th>
-            <th>Sede</th>
-            <th>Descrizione</th>
-            <th>Ultima vista</th>
-            <th>BadgeBox</th>
-            <th>Batteria</th>
-            <th>Rete</th>
-            <th>Modello</th>
-        </tr>
-    </thead>
-    <tbody id="devicesBody"></tbody>
-</table>
+<div id="devicesContainer"></div>
 
 <div class="section-title">Alert ultimi 7 giorni</div>
 <div id="alertsContainer" style="background: #1a2332; border-radius: 8px; overflow: hidden; border: 1px solid #2a3a52;"></div>
@@ -114,12 +142,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL  = "https://gfqufujsprfgtcqafkux.supabase.co";
 const SUPABASE_KEY  = "sb_publishable_IUKjmO4xMxuj0cuHn7HWIA_Rfz4vcM7";
-
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const STATUS_LABELS = {
     ok: "OK", late: "In ritardo", down: "DOWN",
     badgebox_off: "BadgeBox off", never: "Mai visto",
+};
+const STATUS_COLORS = {
+    ok: "#4ade80", late: "#facc15", down: "#f87171",
+    badgebox_off: "#fb923c", never: "#9ca3af",
 };
 
 function fmtAgo(seconds) {
@@ -132,8 +163,7 @@ function fmtAgo(seconds) {
 
 function fmtDate(iso) {
     if (!iso) return "—";
-    const d = new Date(iso);
-    return d.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "medium" });
+    return new Date(iso).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "medium" });
 }
 
 async function loadDevices(filterSede) {
@@ -178,34 +208,153 @@ function renderSummary(devices) {
     `;
 }
 
+// ===================== ECG Engine =====================
+
+class ECGTrace {
+    constructor(canvas, color, alive) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext("2d");
+        this.color = color;
+        this.alive = alive;
+        this.x = 0;
+        this.data = [];
+        this.resize();
+        this._onResize = () => this.resize();
+        window.addEventListener("resize", this._onResize);
+    }
+
+    destroy() {
+        window.removeEventListener("resize", this._onResize);
+    }
+
+    resize() {
+        const rect = this.canvas.parentElement.getBoundingClientRect();
+        this.canvas.width = rect.width * devicePixelRatio;
+        this.canvas.height = rect.height * devicePixelRatio;
+        this.w = rect.width;
+        this.h = rect.height;
+        this.ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+        this.data = new Array(Math.ceil(this.w)).fill(0);
+        this.x = 0;
+    }
+
+    ecgBeat(t) {
+        if (t < 0.10) return 0.12 * Math.sin(t / 0.10 * Math.PI);
+        if (t < 0.18) return 0;
+        if (t < 0.22) return -0.10 * Math.sin((t - 0.18) / 0.04 * Math.PI);
+        if (t < 0.30) return 0.90 * Math.sin((t - 0.22) / 0.08 * Math.PI);
+        if (t < 0.36) return -0.20 * Math.sin((t - 0.30) / 0.06 * Math.PI);
+        if (t < 0.45) return 0;
+        if (t < 0.60) return 0.18 * Math.sin((t - 0.45) / 0.15 * Math.PI);
+        return 0;
+    }
+
+    update() {
+        if (!this.alive) {
+            this.data[this.x % this.w] = (Math.random() - 0.5) * 0.02;
+        } else {
+            const cycleLen = Math.max(80, Math.floor(this.w / 4));
+            const t = (this.x % cycleLen) / cycleLen;
+            this.data[this.x % this.w] = this.ecgBeat(t) + (Math.random() - 0.5) * 0.015;
+        }
+        this.x++;
+        this.draw();
+    }
+
+    draw() {
+        const { ctx, w, h, color } = this;
+        const mid = h * 0.55, amp = h * 0.4;
+        const headX = this.x % w;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.8;
+        ctx.lineJoin = "round";
+
+        let started = false;
+        for (let i = 0; i < w; i++) {
+            const drawX = (headX + i + 20) % w;
+            const gap = (w + drawX - headX) % w;
+            if (gap < 20) continue;
+            const y = mid - (this.data[drawX] || 0) * amp;
+            if (!started) { ctx.moveTo(drawX, y); started = true; }
+            else ctx.lineTo(drawX, y);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        const headVal = this.data[(this.x - 1) % w] || 0;
+        ctx.beginPath();
+        ctx.arc(headX, mid - headVal * amp, 3, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+}
+
+let activeTraces = [];
+
 function renderDevices(devices) {
-    const tbody = document.getElementById("devicesBody");
+    // Destroy old traces
+    activeTraces.forEach(t => t.destroy());
+    activeTraces = [];
+
+    const container = document.getElementById("devicesContainer");
     if (!devices.length) {
-        tbody.innerHTML = `<tr><td colspan="8" class="muted" style="padding:20px;text-align:center">Nessun dispositivo registrato</td></tr>`;
+        container.innerHTML = `<div class="muted" style="padding:20px;text-align:center">Nessun dispositivo registrato</div>`;
         return;
     }
-    tbody.innerHTML = devices.map(d => {
+
+    container.innerHTML = devices.map((d, i) => {
         const dotClass = d.status === "badgebox_off" ? "bgoff" : d.status;
+        const statusLabel = STATUS_LABELS[d.status];
+        const color = STATUS_COLORS[d.status];
         const battClass = d.battery_pct != null && d.battery_pct < 20 ? "low" : "";
-        const battStr = d.battery_pct != null
-            ? `<span class="battery ${battClass}">${d.battery_pct}%${d.battery_charging ? " ⚡" : ""}</span>`
-            : "—";
-        const netStr = d.network_type
-            ? `${d.network_type}${d.network_signal != null ? ` (${d.network_signal})` : ""}`
-            : "—";
+        const battStr = d.battery_pct != null ? `${d.battery_pct}%${d.battery_charging ? " ⚡" : ""}` : "—";
+        const netStr = d.network_type ?? "—";
+        const bbStr = d.badgebox_foreground == null ? "—" : (d.badgebox_foreground ? "foreground" : "background");
+        const alive = d.status === "ok" || d.status === "late" || d.status === "badgebox_off";
+        const hbPerHour = alive ? 12 : 0;
+
         return `
-            <tr>
-                <td><span class="dot ${dotClass}"></span><span class="${dotClass}">${STATUS_LABELS[d.status]}</span></td>
-                <td>${d.sede}</td>
-                <td>${d.descrizione}</td>
-                <td title="${fmtDate(d.last_seen)}">${fmtAgo(d.seconds_since_last)}</td>
-                <td>${d.badgebox_foreground == null ? "—" : (d.badgebox_foreground ? "✓ foreground" : "✗ background")}</td>
-                <td>${battStr}</td>
-                <td>${netStr}</td>
-                <td class="muted">${d.modello ?? "—"}</td>
-            </tr>
-        `;
+        <div class="device-card status-${dotClass}">
+            <div class="device-top">
+                <div class="device-left">
+                    <div class="pulse-dot ${dotClass}"></div>
+                    <div>
+                        <div class="device-name">${d.sede} — ${d.descrizione}</div>
+                        <div class="device-sub">${statusLabel} · ${fmtAgo(d.seconds_since_last)} · ${d.modello ?? ""}</div>
+                    </div>
+                </div>
+                <div class="device-stats">
+                    <span>Batteria <span class="val ${battClass}">${battStr}</span></span>
+                    <span>Rete <span class="val">${netStr}</span></span>
+                    <span>BadgeBox <span class="val">${bbStr}</span></span>
+                </div>
+            </div>
+            <div class="ecg-container">
+                <div class="ecg-grid"></div>
+                <canvas class="ecg-canvas" id="ecg-${i}"></canvas>
+                <div class="bpm-display" style="color:${color}">
+                    ${hbPerHour}<span class="bpm-label"> hb/h</span>
+                </div>
+            </div>
+        </div>`;
     }).join("");
+
+    // Create ECG traces
+    devices.forEach((d, i) => {
+        const canvas = document.getElementById(`ecg-${i}`);
+        if (!canvas) return;
+        const color = STATUS_COLORS[d.status];
+        const alive = d.status === "ok" || d.status === "late" || d.status === "badgebox_off";
+        activeTraces.push(new ECGTrace(canvas, color, alive));
+    });
 }
 
 function renderAlerts(alerts) {
@@ -215,16 +364,26 @@ function renderAlerts(alerts) {
         return;
     }
     const cls = { silence: "down", badgebox_off: "bgoff", recovered: "ok" };
+    const icons = { silence: "🔴", badgebox_off: "🟡", recovered: "🟢" };
+    const labels = { silence: "DOWN", badgebox_off: "BB off", recovered: "Recuperato" };
     c.innerHTML = alerts.map(a => `
         <div class="alert-row">
             <span class="alert-time">${fmtDate(a.sent_at)}</span>
-            <span class="alert-kind ${cls[a.kind] ?? "muted"}">${a.kind}</span>
+            <span class="alert-kind ${cls[a.kind] ?? "muted"}">${icons[a.kind] ?? ""} ${labels[a.kind] ?? a.kind}</span>
             <span>${a.devices?.sede ?? "?"} — ${a.devices?.descrizione ?? "?"}</span>
             ${a.telegram_ok === false ? `<span class="down" title="${a.telegram_error}">⚠ TG fail</span>` : ""}
         </div>
     `).join("");
 }
 
+// ===================== Animation loop =====================
+function animateECG() {
+    activeTraces.forEach(t => t.update());
+    requestAnimationFrame(animateECG);
+}
+animateECG();
+
+// ===================== Data refresh =====================
 async function refreshAll() {
     const filterSede = document.getElementById("filterSede").value;
     const [devices, alerts] = await Promise.all([loadDevices(filterSede), loadAlerts()]);
@@ -240,7 +399,7 @@ document.getElementById("refresh").addEventListener("click", refreshAll);
 document.getElementById("filterSede").addEventListener("change", refreshAll);
 
 refreshAll();
-setInterval(refreshAll, 30_000);  // auto-refresh ogni 30s
+setInterval(refreshAll, 30_000);
 </script>
 </body>
 </html>
