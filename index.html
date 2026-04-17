@@ -177,6 +177,10 @@ button:hover { border-color: #4ade80; }
             <div class="panel-title">Tipo connessione</div>
             <div class="chart-wrap"><canvas id="networkChart"></canvas></div>
         </div>
+        <div class="chart-panel">
+            <div class="panel-title">Modelli dispositivi</div>
+            <div class="chart-wrap"><canvas id="modelChart"></canvas></div>
+        </div>
     </div>
 </div>
 
@@ -339,15 +343,16 @@ function renderSummary(devices) {
         }
     }
 
-    // Battery chart - horizontal bars per device
+    // Charts
     renderBatteryChart(devices);
     renderNetworkChart(devices);
+    renderModelChart(devices);
 }
 
 let battChart = null;
 function renderBatteryChart(devices) {
     const withBatt = devices.filter(d => d.battery_pct != null);
-    const labels = withBatt.map(d => `${d.sede} — ${d.descrizione}`);
+    const labels = withBatt.map(d => `${d.sede} — ${d.descrizione}${d.battery_charging ? " ⚡" : ""}`);
     const data = withBatt.map(d => d.battery_pct);
     const colors = withBatt.map(d => {
         if (d.battery_pct < 20) return "#f87171";
@@ -441,6 +446,75 @@ function renderNetworkChart(devices) {
                                             hidden: false,
                                         };
                                     }).filter(l => !l.text.includes(": 0 (0%)"));
+                                },
+                            },
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const pct = Math.round(ctx.parsed / total * 100);
+                                    return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        }
+    }
+}
+
+let modelChartInstance = null;
+function renderModelChart(devices) {
+    const modelCounts = {};
+    devices.forEach(d => {
+        const m = d.modello ?? "Sconosciuto";
+        // Clean up model name: "samsung SM-A346B" → "SM-A346B"
+        const clean = m.replace(/^samsung\s+/i, "");
+        modelCounts[clean] = (modelCounts[clean] || 0) + 1;
+    });
+    const sorted = Object.entries(modelCounts).sort((a, b) => b[1] - a[1]);
+    const labels = sorted.map(e => e[0]);
+    const data = sorted.map(e => e[1]);
+    const palette = ["#60a5fa", "#4ade80", "#facc15", "#2dd4bf", "#fb923c", "#f87171", "#9ca3af"];
+    const colors = data.map((_, i) => palette[i % palette.length]);
+    const total = devices.length || 1;
+
+    if (modelChartInstance) {
+        modelChartInstance.data.labels = labels;
+        modelChartInstance.data.datasets[0].data = data;
+        modelChartInstance.data.datasets[0].backgroundColor = colors;
+        modelChartInstance.update();
+    } else {
+        const ctx = document.getElementById("modelChart");
+        if (ctx) {
+            modelChartInstance = new Chart(ctx, {
+                type: "doughnut",
+                data: {
+                    labels,
+                    datasets: [{ data, backgroundColor: colors, borderWidth: 0 }],
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: "55%",
+                    plugins: {
+                        legend: {
+                            display: true, position: "bottom",
+                            labels: {
+                                color: "#e6e6e6", boxWidth: 12, padding: 10,
+                                font: { size: 12 },
+                                generateLabels: (chart) => {
+                                    return chart.data.labels.map((label, i) => {
+                                        const val = chart.data.datasets[0].data[i];
+                                        const pct = Math.round(val / total * 100);
+                                        return {
+                                            text: `${label}: ${val} (${pct}%)`,
+                                            fillStyle: chart.data.datasets[0].backgroundColor[i],
+                                            fontColor: "#e6e6e6",
+                                            strokeStyle: "transparent",
+                                            lineWidth: 0,
+                                            index: i,
+                                        };
+                                    });
                                 },
                             },
                         },
