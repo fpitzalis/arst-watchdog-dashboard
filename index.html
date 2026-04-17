@@ -352,7 +352,7 @@ function renderSummary(devices) {
 let battChart = null;
 function renderBatteryChart(devices) {
     const withBatt = devices.filter(d => d.battery_pct != null);
-    const labels = withBatt.map(d => `${d.sede} — ${d.descrizione}${d.battery_charging ? " ⚡" : ""}`);
+    const labels = withBatt.map(d => `${d.battery_charging ? "⚡ " : ""}${d.sede} — ${d.descrizione}`);
     const data = withBatt.map(d => d.battery_pct);
     const colors = withBatt.map(d => {
         if (d.battery_pct < 20) return "#f87171";
