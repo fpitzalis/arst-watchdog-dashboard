@@ -30,10 +30,18 @@ button:hover { border-color: #4ade80; }
 }
 .card {
     background: #1a2332; border-radius: 8px; padding: 16px;
-    border: 1px solid #2a3a52;
+    border: 1px solid #2a3a52; cursor: pointer; transition: border-color 0.2s, transform 0.1s;
 }
+.card:hover { transform: translateY(-1px); }
+.card.active { border-color: #e6e6e6; border-width: 2px; }
 .card .num { font-size: 28px; font-weight: 700; }
 .card .lbl { font-size: 12px; color: #8a9aae; text-transform: uppercase; margin-top: 4px; }
+
+/* Summary + chart row */
+.summary-row { display: flex; gap: 20px; margin-bottom: 24px; align-items: flex-start; flex-wrap: wrap; }
+.summary-cards { flex: 1; min-width: 300px; }
+.chart-container { width: 180px; height: 180px; flex-shrink: 0; background: #1a2332; border-radius: 8px; border: 1px solid #2a3a52; padding: 12px; display: flex; align-items: center; justify-content: center; }
+@media (max-width: 700px) { .chart-container { width: 100%; height: 200px; } }
 .ok    { color: #4ade80; }
 .late  { color: #facc15; }
 .down  { color: #f87171; }
@@ -129,7 +137,10 @@ button:hover { border-color: #4ade80; }
     </div>
 </header>
 
-<div class="summary" id="summary"></div>
+<div class="summary-row">
+    <div class="summary" id="summary"></div>
+    <div class="chart-container"><canvas id="pieChart"></canvas></div>
+</div>
 
 <div class="section-title">Dispositivi</div>
 <div id="devicesContainer"></div>
@@ -137,6 +148,7 @@ button:hover { border-color: #4ade80; }
 <div class="section-title">Alert ultimi 7 giorni</div>
 <div id="alertsContainer" style="background: #1a2332; border-radius: 8px; overflow: hidden; border: 1px solid #2a3a52;"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -195,17 +207,67 @@ async function loadSedi() {
         sedi.map(s => `<option ${s === cur ? "selected" : ""}>${s}</option>`).join("");
 }
 
+let filterStatus = null;  // null = tutti
+let allDevices = [];
+let pieChart = null;
+
 function renderSummary(devices) {
+    allDevices = devices;
     const counts = { ok: 0, late: 0, down: 0, badgebox_off: 0, never: 0 };
     devices.forEach(d => counts[d.status]++);
-    document.getElementById("summary").innerHTML = `
-        <div class="card"><div class="num">${devices.length}</div><div class="lbl">Totali</div></div>
-        <div class="card"><div class="num ok">${counts.ok}</div><div class="lbl">OK</div></div>
-        <div class="card"><div class="num late">${counts.late}</div><div class="lbl">In ritardo</div></div>
-        <div class="card"><div class="num bgoff">${counts.badgebox_off}</div><div class="lbl">BadgeBox off</div></div>
-        <div class="card"><div class="num down">${counts.down}</div><div class="lbl">Down</div></div>
-        <div class="card"><div class="num never">${counts.never}</div><div class="lbl">Mai visti</div></div>
-    `;
+
+    const cards = [
+        { key: null,            num: devices.length, cls: "",     label: "Totali" },
+        { key: "ok",            num: counts.ok,      cls: "ok",   label: "OK" },
+        { key: "late",          num: counts.late,     cls: "late", label: "In ritardo" },
+        { key: "badgebox_off",  num: counts.badgebox_off, cls: "bgoff", label: "BadgeBox off" },
+        { key: "down",          num: counts.down,     cls: "down", label: "Down" },
+        { key: "never",         num: counts.never,    cls: "never", label: "Mai visti" },
+    ];
+
+    document.getElementById("summary").innerHTML = cards.map(c => {
+        const active = filterStatus === c.key ? "active" : "";
+        return `<div class="card ${active}" data-filter="${c.key}"><div class="num ${c.cls}">${c.num}</div><div class="lbl">${c.label}</div></div>`;
+    }).join("");
+
+    // Click handlers
+    document.querySelectorAll("#summary .card").forEach(el => {
+        el.addEventListener("click", () => {
+            const f = el.dataset.filter === "null" ? null : el.dataset.filter;
+            filterStatus = filterStatus === f ? null : f;  // toggle
+            renderSummary(allDevices);
+            const filtered = filterStatus ? allDevices.filter(d => d.status === filterStatus) : allDevices;
+            renderDevices(filtered);
+        });
+    });
+
+    // Pie chart
+    const pieData = [counts.ok, counts.late, counts.badgebox_off, counts.down, counts.never];
+    const pieLabels = ["OK", "In ritardo", "BadgeBox off", "Down", "Mai visti"];
+    const pieColors = ["#4ade80", "#facc15", "#fb923c", "#f87171", "#9ca3af"];
+
+    if (pieChart) {
+        pieChart.data.datasets[0].data = pieData;
+        pieChart.update();
+    } else {
+        const ctx = document.getElementById("pieChart");
+        if (ctx) {
+            pieChart = new Chart(ctx, {
+                type: "doughnut",
+                data: {
+                    labels: pieLabels,
+                    datasets: [{ data: pieData, backgroundColor: pieColors, borderWidth: 0 }],
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: "60%",
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { bodyFont: { size: 12 } },
+                    },
+                },
+            });
+        }
+    }
 }
 
 // ===================== ECG Engine =====================
@@ -389,7 +451,8 @@ async function refreshAll() {
     const [devices, alerts] = await Promise.all([loadDevices(filterSede), loadAlerts()]);
     await loadSedi();
     renderSummary(devices);
-    renderDevices(devices);
+    const filtered = filterStatus ? devices.filter(d => d.status === filterStatus) : devices;
+    renderDevices(filtered);
     renderAlerts(alerts);
     document.getElementById("refreshInfo").textContent =
         "Aggiornato " + new Date().toLocaleTimeString("it-IT");
