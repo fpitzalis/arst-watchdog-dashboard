@@ -144,6 +144,123 @@ button:hover { border-color: #4ade80; }
 .alert-kind { min-width: 90px; font-weight: 600; font-size: 11px;
               text-transform: uppercase; letter-spacing: 0.04em; }
 .muted { color: #6b7a8c; font-size: 12px; }
+
+/* ======= Cronologia dispositivi ======= */
+.chrono-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px; margin-bottom: 20px;
+}
+.chrono-stat {
+    background: #1a2332; border-radius: 8px; padding: 14px 16px;
+    border: 1px solid #2a3a52;
+}
+.chrono-stat .num { font-size: 26px; font-weight: 700; }
+.chrono-stat .lbl { font-size: 11px; color: #8a9aae; text-transform: uppercase; margin-top: 2px; }
+
+.timeline-card {
+    background: #0f1419; border: 1px solid #1a2a3a;
+    border-radius: 10px; margin-bottom: 12px; overflow: hidden;
+    cursor: pointer; transition: border-color 0.2s;
+}
+.timeline-card:hover { border-color: #2a4a6a; }
+.timeline-card.expanded { border-color: #4ade80; }
+.timeline-card.tl-ok   { border-left: 3px solid #4ade80; }
+.timeline-card.tl-down { border-left: 3px solid #f87171; }
+
+.tc-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; flex-wrap: wrap; gap: 8px;
+}
+.tc-left { display: flex; align-items: center; gap: 12px; }
+.tc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.tc-dot.ok   { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+.tc-dot.down { background: #f87171; box-shadow: 0 0 8px #f87171; }
+.tc-name { font-size: 15px; font-weight: 600; }
+.tc-sub  { font-size: 12px; color: #8a9aae; }
+.tc-uptime { text-align: right; }
+.tc-uptime .pct { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tc-uptime .pct.high { color: #4ade80; }
+.tc-uptime .pct.mid  { color: #facc15; }
+.tc-uptime .pct.low  { color: #f87171; }
+.tc-uptime .ulbl { font-size: 10px; color: #8a9aae; text-transform: uppercase; }
+
+.tl-bar-wrap { padding: 0 16px 12px; }
+.tl-labels {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: #6b7a8c; margin-bottom: 4px; font-variant-numeric: tabular-nums;
+}
+.tl-bar {
+    position: relative; height: 36px;
+    background: #0d1117; border-radius: 6px; overflow: hidden;
+    border: 1px solid #1a2a3a;
+}
+.tl-bar::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+        linear-gradient(90deg, rgba(42,58,82,0.15) 1px, transparent 1px),
+        linear-gradient(rgba(42,58,82,0.08) 1px, transparent 1px);
+    background-size: calc(100% / 30) 12px;
+    pointer-events: none;
+}
+.tl-seg {
+    position: absolute; top: 0; bottom: 0; transition: opacity 0.2s;
+}
+.tl-seg:hover { opacity: 0.8; }
+.tl-seg.up {
+    background: linear-gradient(180deg, rgba(74,222,128,0.35) 0%, rgba(74,222,128,0.08) 100%);
+    border-top: 2px solid #4ade80;
+}
+.tl-seg.dn {
+    background: linear-gradient(180deg, rgba(248,113,113,0.4) 0%, rgba(248,113,113,0.08) 100%);
+    border-top: 2px solid #f87171;
+}
+.tl-seg .tl-tip {
+    display: none; position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%); white-space: nowrap;
+    background: #1a2332; border: 1px solid #2a3a52; border-radius: 6px;
+    padding: 6px 10px; font-size: 12px; z-index: 10;
+    pointer-events: none; color: #e6e6e6;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.tl-seg:hover .tl-tip { display: block; }
+.tl-tip .ts { font-weight: 600; }
+.tl-tip .ts.up { color: #4ade80; }
+.tl-tip .ts.dn { color: #f87171; }
+
+.tl-pulse {
+    position: absolute; bottom: 4px; left: 0; right: 0; height: 16px;
+    pointer-events: none;
+}
+.tl-pulse canvas { width: 100%; height: 100%; display: block; }
+
+.tc-detail { display: none; padding: 0 16px 16px; }
+.timeline-card.expanded .tc-detail { display: block; }
+
+.detail-row {
+    display: flex; gap: 20px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.detail-item { text-align: center; }
+.detail-item .di-num { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.detail-item .di-lbl { font-size: 10px; color: #8a9aae; text-transform: uppercase; }
+
+.evt-log {
+    background: #0d1117; border-radius: 6px; border: 1px solid #1a2a3a;
+    max-height: 220px; overflow-y: auto;
+}
+.evt-row {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 8px 14px; border-bottom: 1px solid #141c26;
+    font-size: 13px; font-variant-numeric: tabular-nums;
+}
+.evt-row:last-child { border-bottom: 0; }
+.evt-time { color: #6b7a8c; min-width: 120px; }
+.evt-icon { font-size: 10px; width: 14px; text-align: center; }
+.evt-msg  { color: #c0c8d4; }
+.evt-dur  { color: #8a9aae; margin-left: auto; white-space: nowrap; font-size: 12px; }
+
+.evt-log::-webkit-scrollbar { width: 6px; }
+.evt-log::-webkit-scrollbar-track { background: transparent; }
+.evt-log::-webkit-scrollbar-thumb { background: #2a3a52; border-radius: 3px; }
 </style>
 </head>
 <body>
@@ -186,6 +303,10 @@ button:hover { border-color: #4ade80; }
 
 <div class="section-title">Alert ultimi 7 giorni</div>
 <div id="alertsContainer" style="background: #1a2332; border-radius: 8px; overflow: hidden; border: 1px solid #2a3a52;"></div>
+
+<div class="section-title">Cronologia dispositivi</div>
+<div class="chrono-stats" id="chronoStats"></div>
+<div id="chronoContainer"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
@@ -750,15 +871,275 @@ function animateECG() {
 }
 animateECG();
 
+// ===================== Cronologia dispositivi =====================
+
+function fmtDur(ms) {
+    const H = 3600000, D = 86400000;
+    if (ms < 60000) return `${Math.round(ms/1000)}s`;
+    if (ms < H) return `${Math.round(ms/60000)} min`;
+    if (ms < D) {
+        const h = Math.floor(ms/H);
+        const m = Math.round((ms % H) / 60000);
+        return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    }
+    const d = Math.floor(ms/D);
+    const h = Math.round((ms % D) / H);
+    return h > 0 ? `${d}g ${h}h` : `${d}g`;
+}
+
+function fmtDateShort(ts) {
+    return new Date(ts).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
+}
+
+async function loadChronoData() {
+    // Load devices with created_at + all alerts ordered by time
+    const [devRes, alertRes] = await Promise.all([
+        sb.from("devices").select("id, sede, descrizione, modello, created_at").order("sede").order("descrizione"),
+        sb.from("alerts").select("device_id, kind, sent_at").order("sent_at", { ascending: true }).limit(5000),
+    ]);
+    return {
+        devices: devRes.data ?? [],
+        alerts: alertRes.data ?? [],
+    };
+}
+
+function buildSegments(device, alerts) {
+    const devAlerts = alerts.filter(a => a.device_id === device.id);
+    const activated = new Date(device.created_at).getTime();
+    const now = Date.now();
+    const segments = [];
+    let curUp = true;
+    let segStart = activated;
+
+    for (const a of devAlerts) {
+        const t = new Date(a.sent_at).getTime();
+        if ((a.kind === "silence" || a.kind === "badgebox_off") && curUp) {
+            // close up segment, start down
+            if (t > segStart) segments.push({ start: segStart, end: t, up: true });
+            segStart = t;
+            curUp = false;
+        } else if (a.kind === "recovered" && !curUp) {
+            // close down segment, start up
+            if (t > segStart) segments.push({ start: segStart, end: t, up: false });
+            segStart = t;
+            curUp = true;
+        }
+    }
+    // Close last segment to now
+    if (now > segStart) segments.push({ start: segStart, end: now, up: curUp });
+    return segments;
+}
+
+function drawMiniECG(canvas) {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    if (rect.width < 10) return;
+    canvas.width = rect.width * devicePixelRatio;
+    canvas.height = rect.height * devicePixelRatio;
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    const w = rect.width, h = rect.height, mid = h * 0.5, amp = h * 0.4;
+    ctx.beginPath();
+    ctx.strokeStyle = "#4ade80";
+    ctx.lineWidth = 1.2;
+    ctx.globalAlpha = 0.5;
+    ctx.shadowColor = "#4ade80";
+    ctx.shadowBlur = 4;
+    const cyc = 40;
+    for (let x = 0; x < w; x++) {
+        const t = (x % cyc) / cyc;
+        let v = 0;
+        if (t < 0.08) v = 0.15 * Math.sin(t / 0.08 * Math.PI);
+        else if (t < 0.14) v = 0;
+        else if (t < 0.18) v = -0.12 * Math.sin((t - 0.14) / 0.04 * Math.PI);
+        else if (t < 0.26) v = 1.0 * Math.sin((t - 0.18) / 0.08 * Math.PI);
+        else if (t < 0.32) v = -0.25 * Math.sin((t - 0.26) / 0.06 * Math.PI);
+        else if (t < 0.40) v = 0;
+        else if (t < 0.55) v = 0.22 * Math.sin((t - 0.40) / 0.15 * Math.PI);
+        v += (Math.random() - 0.5) * 0.02;
+        const y = mid - v * amp;
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+}
+
+function renderChrono(chronoDevices, allAlerts) {
+    const container = document.getElementById("chronoContainer");
+    const statsEl = document.getElementById("chronoStats");
+
+    if (!chronoDevices.length) {
+        container.innerHTML = `<div class="muted" style="padding:20px;text-align:center">Nessun dispositivo registrato</div>`;
+        statsEl.innerHTML = "";
+        return;
+    }
+
+    // Build segments for each device
+    const devData = chronoDevices.map(dev => ({
+        ...dev,
+        segments: buildSegments(dev, allAlerts),
+    }));
+
+    // Global stats
+    let totalUp = 0, totalDown = 0, incidents = 0, longestDown = 0;
+    devData.forEach(d => d.segments.forEach(s => {
+        const dur = s.end - s.start;
+        if (s.up) totalUp += dur;
+        else { totalDown += dur; incidents++; if (dur > longestDown) longestDown = dur; }
+    }));
+    const totalTime = totalUp + totalDown;
+    const uptimePct = totalTime > 0 ? (totalUp / totalTime * 100).toFixed(1) : "—";
+    const mttr = incidents > 0 ? totalDown / incidents : 0;
+
+    statsEl.innerHTML = `
+        <div class="chrono-stat"><div class="num" style="color:#4ade80">${uptimePct}%</div><div class="lbl">Uptime flotta</div></div>
+        <div class="chrono-stat"><div class="num" style="color:#f87171">${incidents}</div><div class="lbl">Incidenti totali</div></div>
+        <div class="chrono-stat"><div class="num" style="color:#facc15">${longestDown > 0 ? fmtDur(longestDown) : "—"}</div><div class="lbl">Downtime piu' lungo</div></div>
+        <div class="chrono-stat"><div class="num" style="color:#60a5fa">${mttr > 0 ? fmtDur(mttr) : "—"}</div><div class="lbl">MTTR medio</div></div>
+    `;
+
+    // Render timeline cards
+    container.innerHTML = devData.map((dev, di) => {
+        const activated = new Date(dev.created_at).getTime();
+        const totalSpan = Date.now() - activated;
+        let devUp = 0, devDown = 0, devIncidents = 0;
+        dev.segments.forEach(s => {
+            const dur = s.end - s.start;
+            if (s.up) devUp += dur; else { devDown += dur; devIncidents++; }
+        });
+        const devTotal = devUp + devDown;
+        const devUptimePct = devTotal > 0 ? (devUp / devTotal * 100) : 100;
+        const pctClass = devUptimePct >= 99 ? "high" : devUptimePct >= 95 ? "mid" : "low";
+        const isDown = dev.segments.length > 0 && !dev.segments[dev.segments.length - 1].up;
+        const lastDown = [...dev.segments].reverse().find(s => !s.up);
+
+        // Segments HTML
+        const segsHtml = dev.segments.map((seg, si) => {
+            const left = ((seg.start - activated) / totalSpan * 100);
+            const width = ((seg.end - seg.start) / totalSpan * 100);
+            const cls = seg.up ? "up" : "dn";
+            const pulseHtml = seg.up && width > 3
+                ? `<div class="tl-pulse"><canvas class="mini-ecg-chrono"></canvas></div>` : "";
+            return `<div class="tl-seg ${cls}" style="left:${left}%;width:${Math.max(width, 0.3)}%">
+                <div class="tl-tip">
+                    <span class="ts ${cls}">${seg.up ? "ONLINE" : "DOWN"}</span><br>
+                    ${fmtDate(new Date(seg.start).toISOString())} — ${fmtDate(new Date(seg.end).toISOString())}<br>
+                    Durata: ${fmtDur(seg.end - seg.start)}
+                </div>${pulseHtml}
+            </div>`;
+        }).join("");
+
+        // Event log from segments
+        const events = [];
+        dev.segments.forEach(s => {
+            if (!s.up) {
+                events.push({ time: s.start, type: "down", dur: s.end - s.start });
+                // Only add recovered if this down segment ends before now (device came back)
+                const isLast = s === dev.segments[dev.segments.length - 1];
+                if (!isLast || s.up) {
+                    events.push({ time: s.end, type: "recovered", dur: null });
+                }
+            }
+        });
+        // If last segment is down, don't add recovered
+        if (dev.segments.length > 0 && !dev.segments[dev.segments.length - 1].up) {
+            // remove trailing recovered if accidentally added
+        } else {
+            // last segment is up — if there was a down before it, add recovered for last down->up transition
+            for (let i = dev.segments.length - 1; i >= 0; i--) {
+                if (!dev.segments[i].up && i < dev.segments.length - 1) {
+                    // recovered at end of down segment
+                    const alreadyHas = events.some(e => e.type === "recovered" && e.time === dev.segments[i].end);
+                    if (!alreadyHas) events.push({ time: dev.segments[i].end, type: "recovered", dur: null });
+                    break;
+                }
+            }
+        }
+        events.sort((a, b) => b.time - a.time);
+
+        const evtHtml = events.length === 0
+            ? `<div style="padding:14px;color:#6b7a8c;font-size:13px;text-align:center">Nessun incidente registrato</div>`
+            : events.map(e => `
+                <div class="evt-row">
+                    <span class="evt-time">${fmtDate(new Date(e.time).toISOString())}</span>
+                    <span class="evt-icon">${e.type === "down" ? "&#x1F534;" : "&#x1F7E2;"}</span>
+                    <span class="evt-msg">${e.type === "down" ? "Dispositivo non raggiungibile" : "Dispositivo tornato online"}</span>
+                    ${e.dur ? `<span class="evt-dur">durata ${fmtDur(e.dur)}</span>` : ""}
+                </div>`).join("");
+
+        return `
+        <div class="timeline-card ${isDown ? "tl-down" : "tl-ok"}" data-chrono="${di}">
+            <div class="tc-header">
+                <div class="tc-left">
+                    <div class="tc-dot ${isDown ? "down" : "ok"}"></div>
+                    <div>
+                        <div class="tc-name">${dev.sede} — ${dev.descrizione}</div>
+                        <div class="tc-sub">${dev.modello ?? "—"} · attivo da ${fmtDateShort(activated)}</div>
+                    </div>
+                </div>
+                <div class="tc-uptime">
+                    <div class="pct ${pctClass}">${devUptimePct.toFixed(1)}%</div>
+                    <div class="ulbl">uptime</div>
+                </div>
+            </div>
+            <div class="tl-bar-wrap">
+                <div class="tl-labels">
+                    <span>${fmtDateShort(activated)}</span>
+                    <span>oggi</span>
+                </div>
+                <div class="tl-bar" id="tbar-${di}">${segsHtml}</div>
+            </div>
+            <div class="tc-detail">
+                <div class="detail-row">
+                    <div class="detail-item"><div class="di-num" style="color:#f87171">${devIncidents}</div><div class="di-lbl">Incidenti</div></div>
+                    <div class="detail-item"><div class="di-num" style="color:#facc15">${devDown > 0 ? fmtDur(devDown) : "—"}</div><div class="di-lbl">Downtime totale</div></div>
+                    <div class="detail-item"><div class="di-num" style="color:#60a5fa">${devIncidents > 0 ? fmtDur(devDown / devIncidents) : "—"}</div><div class="di-lbl">MTTR medio</div></div>
+                    <div class="detail-item"><div class="di-num" style="color:#9ca3af">${lastDown ? fmtDateShort(lastDown.start) : "—"}</div><div class="di-lbl">Ultimo incidente</div></div>
+                </div>
+                <div class="evt-log">${evtHtml}</div>
+            </div>
+        </div>`;
+    }).join("");
+
+    // Click to expand
+    container.querySelectorAll(".timeline-card").forEach(card => {
+        card.addEventListener("click", (e) => {
+            // Don't toggle if clicking inside evt-log (scrolling)
+            if (e.target.closest(".evt-log")) return;
+            card.classList.toggle("expanded");
+            // Draw mini ECGs on first expand
+            if (card.classList.contains("expanded")) {
+                card.querySelectorAll(".mini-ecg-chrono").forEach(c => {
+                    if (!c.dataset.drawn) { drawMiniECG(c); c.dataset.drawn = "1"; }
+                });
+            }
+        });
+    });
+
+    // Draw visible mini ECGs
+    requestAnimationFrame(() => {
+        container.querySelectorAll(".mini-ecg-chrono").forEach(c => {
+            if (!c.dataset.drawn && c.getBoundingClientRect().width > 10) {
+                drawMiniECG(c); c.dataset.drawn = "1";
+            }
+        });
+    });
+}
+
 // ===================== Data refresh =====================
 async function refreshAll() {
     const filterSede = document.getElementById("filterSede").value;
-    const [devices, alerts] = await Promise.all([loadDevices(filterSede), loadAlerts()]);
+    const [devices, alerts, chrono] = await Promise.all([
+        loadDevices(filterSede), loadAlerts(), loadChronoData(),
+    ]);
     await loadSedi();
     renderSummary(devices);
     const filtered = filterStatus ? devices.filter(d => d.status === filterStatus) : devices;
     renderDevices(filtered);
     renderAlerts(alerts);
+    // Cronologia: filtra per sede se attivo
+    const chronoDevs = filterSede
+        ? chrono.devices.filter(d => d.sede === filterSede)
+        : chrono.devices;
+    renderChrono(chronoDevs, chrono.alerts);
     document.getElementById("refreshInfo").textContent =
         "Aggiornato " + new Date().toLocaleTimeString("it-IT");
 }
