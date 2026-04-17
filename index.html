@@ -92,11 +92,21 @@ button:hover { border-color: #4ade80; }
     100% { transform: scale(2.2); opacity: 0; }
 }
 
-.device-name { font-size: 14px; font-weight: 600; }
+.device-name { font-size: 13px; font-weight: 600; }
 .device-sub { font-size: 10px; color: #8a9aae; }
-.device-stats { display: flex; gap: 14px; font-size: 11px; color: #8a9aae; }
-.device-stats .val { color: #e6e6e6; font-weight: 600; }
-.device-stats .low { color: #f87171; }
+.device-stats { display: flex; gap: 6px; font-size: 11px; align-items: center; flex-wrap: wrap; }
+.badge-stat {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(255,255,255,0.05); border-radius: 4px; padding: 2px 7px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.badge-stat.charging { color: #4ade80; background: rgba(74,222,128,0.1); }
+.badge-stat.not-charging { color: #fb923c; background: rgba(251,146,60,0.1); }
+.badge-stat.batt-low { color: #f87171; background: rgba(248,113,113,0.1); }
+.badge-stat.net-ok { color: #60a5fa; background: rgba(96,165,250,0.1); }
+.badge-stat.net-none { color: #f87171; background: rgba(248,113,113,0.1); }
+.badge-stat.bb-ok { color: #4ade80; background: rgba(74,222,128,0.1); }
+.badge-stat.bb-off { color: #f87171; background: rgba(248,113,113,0.1); }
 
 .ecg-container {
     width: 100%; height: 45px; position: relative;
@@ -275,7 +285,8 @@ function renderSummary(devices) {
                         legend: {
                             display: true, position: "bottom",
                             labels: {
-                                color: "#e6e6e6", boxWidth: 12, padding: 10, font: { size: 12, weight: "500" },
+                                color: "#e6e6e6", boxWidth: 12, padding: 10,
+                                font: { size: 12, weight: "500" },
                                 generateLabels: (chart) => {
                                     const data = chart.data;
                                     return data.labels.map((label, i) => {
@@ -284,7 +295,9 @@ function renderSummary(devices) {
                                         return {
                                             text: `${label}: ${val} (${pct}%)`,
                                             fillStyle: data.datasets[0].backgroundColor[i],
+                                            fontColor: "#e6e6e6",
                                             strokeStyle: "transparent",
+                                            lineWidth: 0,
                                             index: i,
                                             hidden: false,
                                         };
@@ -414,12 +427,32 @@ function renderDevices(devices) {
         const dotClass = d.status === "badgebox_off" ? "bgoff" : d.status;
         const statusLabel = STATUS_LABELS[d.status];
         const color = STATUS_COLORS[d.status];
-        const battClass = d.battery_pct != null && d.battery_pct < 20 ? "low" : "";
-        const battStr = d.battery_pct != null ? `${d.battery_pct}%${d.battery_charging ? " ⚡" : ""}` : "—";
-        const netStr = d.network_type ?? "—";
-        const bbStr = d.badgebox_foreground == null ? "—" : (d.badgebox_foreground ? "foreground" : "background");
         const alive = d.status === "ok" || d.status === "late" || d.status === "badgebox_off";
         const hbPerHour = alive ? 12 : 0;
+
+        // Battery badge
+        const battPct = d.battery_pct;
+        const isCharging = d.battery_charging === true;
+        let battBadge = "";
+        if (battPct != null) {
+            const battCls = battPct < 20 ? "batt-low" : isCharging ? "charging" : "not-charging";
+            const battIcon = isCharging ? "&#x26A1;" : battPct < 20 ? "&#x1FAAB;" : "&#x1F50B;";
+            battBadge = `<span class="badge-stat ${battCls}">${battIcon} ${battPct}%</span>`;
+        }
+
+        // Network badge
+        const net = d.network_type;
+        const netCls = !net || net === "none" ? "net-none" : "net-ok";
+        const netIcon = net === "wifi" ? "&#x1F4F6;" : net === "cellular" || net === "4G" ? "&#x1F4F1;" : "&#x274C;";
+        const netLabel = net && net !== "none" ? net.toUpperCase() : "OFFLINE";
+        const netBadge = `<span class="badge-stat ${netCls}">${netIcon} ${netLabel}</span>`;
+
+        // BadgeBox badge
+        const bbFg = d.badgebox_foreground;
+        const bbCls = bbFg === true ? "bb-ok" : "bb-off";
+        const bbIcon = bbFg === true ? "&#x2705;" : "&#x274C;";
+        const bbLabel = bbFg === true ? "BB ON" : bbFg === false ? "BB OFF" : "BB ?";
+        const bbBadge = `<span class="badge-stat ${bbCls}">${bbIcon} ${bbLabel}</span>`;
 
         return `
         <div class="device-card status-${dotClass}">
@@ -428,13 +461,11 @@ function renderDevices(devices) {
                     <div class="pulse-dot ${dotClass}"></div>
                     <div>
                         <div class="device-name">${d.sede} — ${d.descrizione}</div>
-                        <div class="device-sub">${statusLabel} · ${fmtAgo(d.seconds_since_last)} · ${d.modello ?? ""}</div>
+                        <div class="device-sub">${statusLabel} · ${fmtAgo(d.seconds_since_last)}</div>
                     </div>
                 </div>
                 <div class="device-stats">
-                    <span>Batteria <span class="val ${battClass}">${battStr}</span></span>
-                    <span>Rete <span class="val">${netStr}</span></span>
-                    <span>BadgeBox <span class="val">${bbStr}</span></span>
+                    ${battBadge}${netBadge}${bbBadge}
                 </div>
             </div>
             <div class="ecg-container">
