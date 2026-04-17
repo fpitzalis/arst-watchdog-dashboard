@@ -891,42 +891,69 @@ function fmtDateShort(ts) {
     return new Date(ts).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
 }
 
+const DOWN_THRESHOLD_MS = 10 * 60 * 1000; // 10 min = down
+
 async function loadChronoData() {
-    // Load devices with created_at + all alerts ordered by time
-    const [devRes, alertRes] = await Promise.all([
+    // Load devices with created_at + ALL heartbeats (received_at + device_id)
+    const [devRes, hbRes] = await Promise.all([
         sb.from("devices").select("id, sede, descrizione, modello, created_at").order("sede").order("descrizione"),
-        sb.from("alerts").select("device_id, kind, sent_at").order("sent_at", { ascending: true }).limit(5000),
+        sb.from("heartbeats").select("device_id, received_at").order("received_at", { ascending: true }).limit(50000),
     ]);
     return {
         devices: devRes.data ?? [],
-        alerts: alertRes.data ?? [],
+        heartbeats: hbRes.data ?? [],
     };
 }
 
-function buildSegments(device, alerts) {
-    const devAlerts = alerts.filter(a => a.device_id === device.id);
+function buildSegments(device, heartbeats) {
+    const hbs = heartbeats
+        .filter(h => h.device_id === device.id)
+        .map(h => new Date(h.received_at).getTime())
+        .sort((a, b) => a - b);
+
     const activated = new Date(device.created_at).getTime();
     const now = Date.now();
     const segments = [];
-    let curUp = true;
-    let segStart = activated;
 
-    for (const a of devAlerts) {
-        const t = new Date(a.sent_at).getTime();
-        if ((a.kind === "silence" || a.kind === "badgebox_off") && curUp) {
-            // close up segment, start down
-            if (t > segStart) segments.push({ start: segStart, end: t, up: true });
-            segStart = t;
-            curUp = false;
-        } else if (a.kind === "recovered" && !curUp) {
-            // close down segment, start up
-            if (t > segStart) segments.push({ start: segStart, end: t, up: false });
-            segStart = t;
-            curUp = true;
+    if (hbs.length === 0) {
+        // No heartbeats at all — entire period is down
+        segments.push({ start: activated, end: now, up: false });
+        return segments;
+    }
+
+    // Gap from activation to first heartbeat
+    if (hbs[0] - activated > DOWN_THRESHOLD_MS) {
+        segments.push({ start: activated, end: hbs[0], up: false });
+    }
+
+    // Walk through heartbeats, detect gaps
+    let upStart = Math.min(activated, hbs[0]);
+    if (hbs[0] - activated <= DOWN_THRESHOLD_MS) upStart = activated;
+    else upStart = hbs[0];
+
+    for (let i = 1; i < hbs.length; i++) {
+        const gap = hbs[i] - hbs[i - 1];
+        if (gap > DOWN_THRESHOLD_MS) {
+            // Close up segment at last good heartbeat
+            if (hbs[i - 1] > upStart) {
+                segments.push({ start: upStart, end: hbs[i - 1], up: true });
+            }
+            // Down segment = gap period
+            segments.push({ start: hbs[i - 1], end: hbs[i], up: false });
+            // New up starts at this heartbeat
+            upStart = hbs[i];
         }
     }
-    // Close last segment to now
-    if (now > segStart) segments.push({ start: segStart, end: now, up: curUp });
+
+    // Close final up segment to now (if last heartbeat recent) or mark trailing down
+    const lastHb = hbs[hbs.length - 1];
+    if (now - lastHb > DOWN_THRESHOLD_MS) {
+        if (lastHb > upStart) segments.push({ start: upStart, end: lastHb, up: true });
+        segments.push({ start: lastHb, end: now, up: false });
+    } else {
+        segments.push({ start: upStart, end: now, up: true });
+    }
+
     return segments;
 }
 
@@ -962,7 +989,7 @@ function drawMiniECG(canvas) {
     ctx.stroke();
 }
 
-function renderChrono(chronoDevices, allAlerts) {
+function renderChrono(chronoDevices, allHeartbeats) {
     const container = document.getElementById("chronoContainer");
     const statsEl = document.getElementById("chronoStats");
 
@@ -975,7 +1002,7 @@ function renderChrono(chronoDevices, allAlerts) {
     // Build segments for each device
     const devData = chronoDevices.map(dev => ({
         ...dev,
-        segments: buildSegments(dev, allAlerts),
+        segments: buildSegments(dev, allHeartbeats),
     }));
 
     // Global stats
@@ -1139,7 +1166,7 @@ async function refreshAll() {
     const chronoDevs = filterSede
         ? chrono.devices.filter(d => d.sede === filterSede)
         : chrono.devices;
-    renderChrono(chronoDevs, chrono.alerts);
+    renderChrono(chronoDevs, chrono.heartbeats);
     document.getElementById("refreshInfo").textContent =
         "Aggiornato " + new Date().toLocaleTimeString("it-IT");
 }
