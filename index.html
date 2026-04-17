@@ -95,6 +95,13 @@ button:hover { border-color: #4ade80; }
 .device-name { font-size: 13px; font-weight: 600; }
 .device-sub { font-size: 10px; color: #8a9aae; }
 .device-stats { display: flex; gap: 6px; font-size: 11px; align-items: center; flex-wrap: wrap; }
+.device-detail {
+    display: flex; gap: 16px; padding: 0 14px 6px; flex-wrap: wrap;
+    font-size: 11px; color: #8a9aae;
+}
+.device-detail span { white-space: nowrap; }
+.device-detail .lbl { color: #6b7a8c; }
+.device-detail .val { color: #c0c8d4; }
 .badge-stat {
     display: inline-flex; align-items: center; gap: 4px;
     background: rgba(255,255,255,0.05); border-radius: 4px; padding: 2px 7px;
@@ -454,6 +461,14 @@ function renderDevices(devices) {
         const bbLabel = bbFg === true ? "BB ON" : bbFg === false ? "BB OFF" : "BB ?";
         const bbBadge = `<span class="badge-stat ${bbCls}">${bbIcon} ${bbLabel}</span>`;
 
+        // Detail row - all original data
+        const lastSeen = fmtAgo(d.seconds_since_last);
+        const lastSeenFull = d.last_seen ? fmtDate(d.last_seen) : "—";
+        const bbDetail = bbFg == null ? "—" : (bbFg ? "foreground" : "background");
+        const battDetail = battPct != null ? `${battPct}%${isCharging ? " ⚡" : ""}` : "—";
+        const netDetail = net ? `${net}${d.network_signal != null ? ` (${d.network_signal})` : ""}` : "—";
+        const modello = d.modello ?? "—";
+
         return `
         <div class="device-card status-${dotClass}">
             <div class="device-top">
@@ -461,12 +476,19 @@ function renderDevices(devices) {
                     <div class="pulse-dot ${dotClass}"></div>
                     <div>
                         <div class="device-name">${d.sede} — ${d.descrizione}</div>
-                        <div class="device-sub">${statusLabel} · ${fmtAgo(d.seconds_since_last)}</div>
+                        <div class="device-sub">${statusLabel} · ${lastSeen}</div>
                     </div>
                 </div>
                 <div class="device-stats">
                     ${battBadge}${netBadge}${bbBadge}
                 </div>
+            </div>
+            <div class="device-detail">
+                <span><span class="lbl">Ultima vista:</span> <span class="val" title="${lastSeenFull}">${lastSeen}</span></span>
+                <span><span class="lbl">BadgeBox:</span> <span class="val">${bbDetail}</span></span>
+                <span><span class="lbl">Batteria:</span> <span class="val">${battDetail}</span></span>
+                <span><span class="lbl">Rete:</span> <span class="val">${netDetail}</span></span>
+                <span><span class="lbl">Modello:</span> <span class="val">${modello}</span></span>
             </div>
             <div class="ecg-container">
                 <div class="ecg-grid"></div>
